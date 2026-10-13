@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>V-Mat 사용법</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one reading column under a sticky header; each step is a numbered panel framed in blueprint blue */
+:root {
+  --paper: #f5f8fc;
+  --surface: #ffffff;
+  --ink: #142033;
+  --ink-soft: #4b5b72;
+  --line: #cdd9ea;
+  --blue: #2563d6;
+  --blue-deep: #1a4aa6;
+  --blue-wash: #eaf1fd;
+  --warn-ink: #8a4b00;
+  --warn-wash: #fff5e3;
+  --warn-line: #efc67a;
+  --font-body: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* Language switch: everything is written twice, the inactive language is hidden */
+.doc[data-lang="ko"] [lang="en"],
+.doc[data-lang="en"] [lang="ko"] { display: none !important; }
+
+/* Header */
+.top {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background: var(--paper);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+.top-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.brand {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand b { color: var(--blue); }
+.nav {
+  display: flex;
+  gap: 4px 14px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13.5px;
+}
+.nav a { color: var(--ink-soft); text-decoration: none; white-space: nowrap; }
+.nav a:hover { color: var(--blue); }
+
+.lang {
+  display: inline-flex;
+  border: 1.5px solid var(--blue);
+  border-radius: 999px;
+  overflow: hidden;
+  flex: none;
+}
+.lang button {
+  font: 500 12.5px/1 var(--font-body);
+  padding: 7px 12px;
+  border: 0;
+  background: var(--surface);
+  color: var(--blue);
+  cursor: pointer;
+}
+.lang button[aria-pressed="true"] { background: var(--blue); color: var(--surface); }
+
+/* Page */
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding-inline: 20px;
+  padding-block: 36px 64px;
+  display: grid;
+  gap: 56px;
+}
+
+.intro { display: grid; gap: 16px; }
+.intro h1 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 38px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.intro h1 b { color: var(--blue); }
+.lede { margin: 0; max-width: 62ch; color: var(--ink-soft); font-size: 16px; }
+.byline { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.byline strong { color: var(--ink); font-weight: 600; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.facts li {
+  font: 500 12.5px/1 var(--font-mono);
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.key {
+  border: 1.5px solid var(--blue);
+  border-radius: var(--radius);
+  background: var(--blue-wash);
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+}
+.key strong { color: var(--blue-deep); }
+.key p { margin: 0; }
+
+/* Sections */
+.part { display: grid; gap: 22px; scroll-margin-top: 80px; }
+.part-head { display: grid; gap: 4px; }
+.eyebrow {
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+.part h2 { margin: 0; font-size: 24px; line-height: 1.3; letter-spacing: -0.01em; text-wrap: balance; }
+.part-head p { margin: 0; color: var(--ink-soft); max-width: 62ch; }
+
+/* Steps */
+.step {
+  background: var(--surface);
+  border: 1.5px solid var(--blue);
+  border-radius: var(--radius);
+  padding: 20px 22px 22px;
+  display: grid;
+  gap: 14px;
+  scroll-margin-top: 80px;
+}
+.step-head { display: flex; align-items: center; gap: 12px; }
+.num {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--blue);
+  color: var(--surface);
+  font: 500 14px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.step h3 { margin: 0; font-size: 18px; line-height: 1.35; text-wrap: balance; }
+.body { display: grid; gap: 10px; min-width: 0; }
+.body p { margin: 0; max-width: 68ch; }
+.body ol, .body ul { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; max-width: 68ch; }
+.muted { color: var(--ink-soft); }
+
+/* Exact UI labels, keys and paths */
+.ui {
+  font: 500 0.88em/1 var(--font-body);
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--blue-wash);
+  color: var(--blue-deep);
+  white-space: nowrap;
+}
+kbd {
+  font: 500 0.82em/1 var(--font-mono);
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink);
+  white-space: nowrap;
+}
+code {
+  font: 0.86em/1.4 var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+/* Icon legend for the preset toolbar */
+.icons { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }
+.icons div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  font-size: 14px;
+}
+.icons svg { flex: none; width: 18px; height: 18px; color: var(--blue); }
+
+/* Screenshots */
+.shots { display: grid; gap: 14px; }
+.shot { margin: 0; display: grid; gap: 6px; }
+.shot a { display: block; width: fit-content; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.shot a:hover { border-color: var(--blue); }
+.shot img { margin: 0 auto; }
+.shot figcaption { font-size: 13px; color: var(--ink-soft); }
+.shot .todo {
+  display: none;
+  min-height: 170px;
+  border: 1.5px dashed var(--blue);
+  border-radius: 8px;
+  background: var(--blue-wash);
+  color: var(--blue-deep);
+  padding: 20px;
+  place-content: center;
+  text-align: center;
+  gap: 6px;
+}
+.shot.missing a { display: none; }
+.shot.missing .todo { display: grid; }
+
+/* Callouts */
+.note {
+  border: 1px solid var(--warn-line);
+  background: var(--warn-wash);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+.note-title { font-weight: 700; color: var(--warn-ink); }
+.note ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.tip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: grid;
+  gap: 6px;
+}
+.tip-title { font-weight: 600; color: var(--blue-deep); }
+.tip ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+
+/* Contact */
+.contact {
+  border: 1.5px solid var(--blue);
+  border-radius: var(--radius);
+  background: var(--blue-wash);
+  padding: 16px 18px;
+}
+.contact p { margin: 0; }
+.contact strong { color: var(--blue-deep); }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+
+@media (max-width: 560px) {
+  .page { padding-inline: 16px; gap: 44px; }
+  .top-inner { padding: 10px 16px; }
+  .step { padding: 16px; }
+  .nav { order: 3; flex-basis: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="doc" id="doc" data-lang="ko">
+
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="#top"><b>V-Mat</b> <span lang="ko">사용법</span><span lang="en">Guide</span></a>
+    <nav class="nav" aria-label="sections">
+      <a href="#install"><span lang="ko">설치</span><span lang="en">Install</span></a>
+      <a href="#palette">Palette</a>
+      <a href="#multislot">Multi-slot</a>
+      <a href="#presets"><span lang="ko">Preset 공유</span><span lang="en">Sharing presets</span></a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" id="lang-ko" data-set-lang="ko" aria-pressed="true">한국어</button>
+      <button type="button" id="lang-en" data-set-lang="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+</header>
+
+<main class="page" id="top">
+
+  <section class="intro">
+    <h1><b>V-Mat</b> <span lang="ko">사용법</span><span lang="en">Guide</span></h1>
+    <p class="lede" lang="ko">레벨에서 고른 메쉬에 preset으로 모아 둔 material을 클릭 한 번으로 입히는 언리얼 에디터 플러그인입니다. 순서대로 따라 하면 됩니다.</p>
+    <p class="lede" lang="en">An Unreal Editor plugin that applies materials from a preset to the meshes you select in the level, in one click. Follow the steps in order.</p>
+    <p class="byline" lang="ko">작성자 <strong>최필립</strong> · GMTCK CX Team</p>
+    <p class="byline" lang="en">Author <strong>Philip Choi</strong> · GMTCK CX Team</p>
+    <ul class="facts">
+      <li>Unreal Engine 5.5</li>
+      <li lang="ko">에디터 전용</li><li lang="en">Editor only</li>
+      <li>Win64</li>
+      <li>v0.1.0</li>
+    </ul>
+    <div class="key">
+      <p lang="ko"><strong>먼저 알아두세요.</strong> V-Mat은 액터 하나가 아니라 <strong>원본 StaticMesh 에셋</strong>의 material을 바꿉니다. 그래서 같은 메쉬를 쓰는 다른 액터도 함께 바뀝니다.</p>
+      <p lang="en"><strong>Before you start.</strong> V-Mat changes the material on the <strong>source StaticMesh asset</strong>, not on a single actor. Every other actor that uses the same mesh changes too.</p>
+    </div>
+  </section>
+
+  <!-- 설치 -->
+  <section class="part" id="install">
+    <div class="part-head">
+      <span class="eyebrow" lang="ko">시작하기</span><span class="eyebrow" lang="en">Getting started</span>
+      <h2 lang="ko">설치하고 열기</h2><h2 lang="en">Install and open</h2>
+    </div>
+
+    <article class="step" id="step-1">
+      <div class="step-head"><span class="num">1</span>
+        <h3 lang="ko">Plugins 폴더에 V-Mat 넣기</h3><h3 lang="en">Put V-Mat in the Plugins folder</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>프로젝트 폴더 안의 <code>Plugins</code> 폴더에 <code>VMat</code> 폴더를 통째로 넣습니다. <code>Plugins</code> 폴더가 없으면 새로 만듭니다.</p>
+        <p>프로젝트를 열면 V-Mat이 자동으로 켜집니다.</p>
+        <p class="muted">git으로 받았다면 <code>Binaries</code> 폴더가 없어서, 처음 열 때 다시 빌드할지 묻는 창이 뜹니다. <span class="ui">Yes</span>를 누르면 됩니다. 빌드하려면 Visual Studio(C++)가 설치돼 있어야 합니다.</p>
+      </div>
+      <div class="body" lang="en">
+        <p>Copy the whole <code>VMat</code> folder into the <code>Plugins</code> folder of your project. Create <code>Plugins</code> if it doesn't exist.</p>
+        <p>V-Mat turns on by itself when you open the project.</p>
+        <p class="muted">If you got the plugin from git, it has no <code>Binaries</code> folder, so Unreal asks to rebuild it the first time. Click <span class="ui">Yes</span>. Building needs Visual Studio with C++.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/01-plugins-folder.png" target="_blank" rel="noopener"><img src="images/01-plugins-folder.png" width="677" height="377" alt="프로젝트 폴더 / Project folder" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/01-plugins-folder.png</code></div>
+          <figcaption lang="ko">프로젝트 폴더. <code>Plugins</code> 안에 <code>VMat</code>을 넣습니다.</figcaption>
+          <figcaption lang="en">The project folder. <code>VMat</code> goes inside <code>Plugins</code>.</figcaption>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-2">
+      <div class="step-head"><span class="num">2</span>
+        <h3 lang="ko">V-Mat 창 열기</h3><h3 lang="en">Open the V-Mat window</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>레벨 에디터 위쪽 툴바에서 <span class="ui">Platforms</span> 오른쪽에 있는 <span class="ui">V-Mat</span> 버튼을 누릅니다.</p>
+        <p class="muted">메뉴 <span class="ui">Tools</span> → <span class="ui">V-Mat</span>으로도 열 수 있습니다.</p>
+      </div>
+      <div class="body" lang="en">
+        <p>In the level editor toolbar, click <span class="ui">V-Mat</span>, to the right of <span class="ui">Platforms</span>.</p>
+        <p class="muted">You can also use <span class="ui">Tools</span> → <span class="ui">V-Mat</span> in the menu bar.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/02-toolbar.png" target="_blank" rel="noopener"><img src="images/02-toolbar.png" width="904" height="75" alt="툴바의 V-Mat 버튼 / V-Mat button in the toolbar" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/02-toolbar.png</code></div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-3">
+      <div class="step-head"><span class="num">3</span>
+        <h3 lang="ko">창 구성 보기</h3><h3 lang="en">Know the window</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>맨 위 두 탭으로 화면을 바꿉니다.</p>
+        <ul>
+          <li><span class="ui">Palette</span>: 선택한 메쉬에 material을 입힙니다. 대부분은 이 탭을 씁니다.</li>
+          <li><span class="ui">Multi-slot</span>: material slot이 2개 이상인 메쉬를 찾아서 slot별로 입힙니다.</li>
+        </ul>
+        <p class="muted">맨 아래 줄에는 지금 선택한 액터 수와 바뀔 메쉬 수가 나옵니다.</p>
+      </div>
+      <div class="body" lang="en">
+        <p>Switch views with the two tabs at the top.</p>
+        <ul>
+          <li><span class="ui">Palette</span>: applies materials to the selected meshes. You'll use this tab most of the time.</li>
+          <li><span class="ui">Multi-slot</span>: finds meshes with two or more material slots and sets each slot separately.</li>
+        </ul>
+        <p class="muted">The bottom line shows how many actors are selected and how many meshes will change.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/03-window.png" target="_blank" rel="noopener"><img src="images/03-window.png" width="954" height="661" alt="V-Mat 창 / V-Mat window" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/03-window.png</code></div>
+        </figure>
+      </div>
+    </article>
+  </section>
+
+  <!-- Palette -->
+  <section class="part" id="palette">
+    <div class="part-head">
+      <span class="eyebrow">Palette</span>
+      <h2 lang="ko">Material 모으고 입히기</h2><h2 lang="en">Collect and apply materials</h2>
+      <p lang="ko">preset에 material을 모아 두고, 레벨에서 메쉬를 고른 다음 material을 누릅니다.</p>
+      <p lang="en">Collect materials in a preset, select meshes in the level, then click a material.</p>
+    </div>
+
+    <article class="step" id="step-4">
+      <div class="step-head"><span class="num">4</span>
+        <h3 lang="ko">Material 추가하기</h3><h3 lang="en">Add materials</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>콘텐츠 브라우저에서 material을 고르고 <span class="ui">Add selected</span>를 누릅니다.</p>
+        <ul>
+          <li>여러 개를 한 번에 골라도 됩니다. material instance도 됩니다.</li>
+          <li>이미 들어 있는 material은 다시 추가되지 않습니다.</li>
+        </ul>
+      </div>
+      <div class="body" lang="en">
+        <p>Select materials in the Content Browser, then click <span class="ui">Add selected</span>.</p>
+        <ul>
+          <li>You can select several at once. Material instances work too.</li>
+          <li>Materials already in the preset aren't added twice.</li>
+        </ul>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/04-add-selected.png" target="_blank" rel="noopener"><img src="images/04-add-selected.png" width="1229" height="663" alt="Add selected로 추가 / Adding with Add selected" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/04-add-selected.png</code></div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-5">
+      <div class="step-head"><span class="num">5</span>
+        <h3 lang="ko">끌어다 놓아서 추가하기</h3><h3 lang="en">Or drag and drop</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>콘텐츠 브라우저에서 material을 V-Mat 창 가운데로 끌어다 놓아도 추가됩니다. 여러 개를 한 번에 끌어도 됩니다. 놓을 수 있는 곳은 파랗게 바뀝니다.</p>
+      </div>
+      <div class="body" lang="en">
+        <p>You can also drag materials from the Content Browser into the middle of the V-Mat window. Dragging several at once works. The drop area turns blue.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/05-drag-drop.png" target="_blank" rel="noopener"><img src="images/05-drag-drop.png" width="1232" height="660" alt="끌어다 놓기 / Drag and drop" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/05-drag-drop.png</code></div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-6">
+      <div class="step-head"><span class="num">6</span>
+        <h3 lang="ko">Preset 만들고 관리하기</h3><h3 lang="en">Create and manage presets</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>preset은 material 묶음입니다. 처음에는 <span class="ui">Default</span>만 있습니다. 내장, 외장처럼 쓰임새별로 만들어 두면 고르기 편합니다.</p>
+        <p>드롭다운에서 preset을 고르고, 오른쪽 아이콘으로 관리합니다.</p>
+      </div>
+      <div class="body" lang="en">
+        <p>A preset is a set of materials. You start with <span class="ui">Default</span>. Making presets per use, such as Interior and Exterior, keeps the list short.</p>
+        <p>Pick a preset from the dropdown and manage it with the icons on the right.</p>
+      </div>
+      <div class="icons">
+        <div><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l.8-3.2L10.5 3l2.5 2.5-6.8 6.7L3 13z"/></svg><span lang="ko">이름 바꾸기 (<kbd>Enter</kbd> 확정, <kbd>Esc</kbd> 취소)</span><span lang="en">Rename (<kbd>Enter</kbd> to confirm, <kbd>Esc</kbd> to cancel)</span></div>
+        <div><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span lang="ko">새 preset 만들기</span><span lang="en">New preset</span></div>
+        <div><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1"/><path d="M10.5 3H3.5a1 1 0 0 0-1 1v7"/></svg><span lang="ko">지금 preset 복사</span><span lang="en">Duplicate this preset</span></div>
+        <div><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5"/></svg><span lang="ko">지금 preset 삭제 (확인 창이 뜹니다)</span><span lang="en">Delete this preset (asks first)</span></div>
+      </div>
+      <div class="body" lang="ko">
+        <p class="muted">바꾸는 즉시 저장됩니다. 저장 버튼은 없습니다. 드롭다운 목록 오른쪽 숫자는 그 preset에 든 material 수입니다.</p>
+      </div>
+      <div class="body" lang="en">
+        <p class="muted">Changes save right away; there's no save button. The number next to each preset in the list is how many materials it holds.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/06-preset-bar.png" target="_blank" rel="noopener"><img src="images/06-preset-bar.png" width="946" height="74" alt="Preset 툴바 / Preset bar" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/06-preset-bar.png</code></div>
+        </figure>
+        <figure class="shot">
+          <a href="images/07-preset-list.png" target="_blank" rel="noopener"><img src="images/07-preset-list.png" width="945" height="95" alt="Preset 목록 / Preset list" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/07-preset-list.png</code></div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-7">
+      <div class="step-head"><span class="num">7</span>
+        <h3 lang="ko">메쉬에 material 입히기</h3><h3 lang="en">Apply a material to meshes</h3>
+      </div>
+      <div class="body" lang="ko">
+        <ol>
+          <li>레벨에서 메쉬 액터를 선택합니다. 여러 개를 골라도 됩니다.</li>
+          <li>V-Mat 맨 아래 줄에서 바뀔 메쉬 수를 확인합니다.</li>
+          <li>material 타일을 누릅니다.</li>
+        </ol>
+      </div>
+      <div class="body" lang="en">
+        <ol>
+          <li>Select mesh actors in the level. You can select several.</li>
+          <li>Check the bottom line of V-Mat for how many meshes will change.</li>
+          <li>Click a material tile.</li>
+        </ol>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/08-apply.png" target="_blank" rel="noopener"><img src="images/08-apply.png" width="675" height="376" alt="선택한 메쉬에 입히기 / Applying to the selected mesh" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/08-apply.png</code></div>
+        </figure>
+      </div>
+      <div class="note" lang="ko">
+        <span class="note-title">누르기 전에 꼭 확인하세요</span>
+        <ul>
+          <li><strong>같은 메쉬를 쓰는 다른 액터도 같이 바뀝니다.</strong> 볼트 하나만 골라도 같은 볼트 메쉬는 전부 바뀝니다. 알림에 함께 바뀐 액터 수가 나옵니다.</li>
+          <li>바뀐 메쉬 에셋은 <strong>바로 저장</strong>됩니다. 레벨은 평소처럼 <kbd>Ctrl</kbd>+<kbd>S</kbd>로 저장합니다.</li>
+          <li>되돌리려면 <kbd>Ctrl</kbd>+<kbd>Z</kbd>를 한 번 누릅니다. 되돌린 뒤에는 메쉬를 다시 저장해야 합니다.</li>
+          <li>이런 메쉬는 <strong>건너뜁니다</strong>. 건너뛴 내용은 아래 줄에 노란 경고로 나옵니다.
+            <ul>
+              <li>slot이 2개 이상인 메쉬: 경고 옆 <span class="ui">Show multi-slot</span>을 누르면 Multi-slot 탭에서 바로 이어서 할 수 있습니다.</li>
+              <li>엔진이나 다른 플러그인 메쉬(<code>/Game</code> 밖)</li>
+              <li>메쉬가 없는 액터(라이트 등)</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="note" lang="en">
+        <span class="note-title">Check before you click</span>
+        <ul>
+          <li><strong>Other actors that use the same mesh change too.</strong> Select one bolt and every actor using that bolt mesh changes. The notification tells you how many actors changed.</li>
+          <li>Changed mesh assets are <strong>saved right away</strong>. Save the level as usual with <kbd>Ctrl</kbd>+<kbd>S</kbd>.</li>
+          <li>Press <kbd>Ctrl</kbd>+<kbd>Z</kbd> once to undo the whole click. Save the meshes again after undoing.</li>
+          <li>These are <strong>skipped</strong>, and a yellow warning on the bottom line says so:
+            <ul>
+              <li>Meshes with two or more slots. Click <span class="ui">Show multi-slot</span> next to the warning to continue in the Multi-slot tab.</li>
+              <li>Engine or other plugin meshes (outside <code>/Game</code>)</li>
+              <li>Actors without a mesh, such as lights</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="tip" lang="ko">
+        <span class="tip-title">타일 다루기</span>
+        <ul>
+          <li>타일에 마우스를 올리면 오른쪽 위에 <span class="ui">×</span>가 보입니다. 누르면 preset에서 빠집니다. material 에셋은 지워지지 않습니다.</li>
+          <li>타일을 우클릭하면 입히기, 콘텐츠 브라우저에서 보기, preset에서 빼기 메뉴가 나옵니다.</li>
+          <li>material을 옮기거나 지워서 찾을 수 없으면 타일에 <span class="ui">Missing</span>이 뜹니다.</li>
+        </ul>
+      </div>
+      <div class="tip" lang="en">
+        <span class="tip-title">Working with tiles</span>
+        <ul>
+          <li>Hover a tile to show <span class="ui">×</span> in its corner. It removes the material from the preset; the asset itself stays.</li>
+          <li>Right-click a tile to apply it, show it in the Content Browser, or remove it from the preset.</li>
+          <li>A tile shows <span class="ui">Missing</span> when its material was moved or deleted.</li>
+        </ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- Multi-slot -->
+  <section class="part" id="multislot">
+    <div class="part-head">
+      <span class="eyebrow">Multi-slot</span>
+      <h2 lang="ko">Slot이 여러 개인 메쉬</h2><h2 lang="en">Meshes with several slots</h2>
+      <p lang="ko">Palette는 slot이 2개 이상인 메쉬를 건너뜁니다. 이런 메쉬는 이 탭에서 slot을 골라 따로 입힙니다.</p>
+      <p lang="en">Palette skips meshes with two or more slots. Use this tab to pick a slot and set it on its own.</p>
+    </div>
+
+    <article class="step" id="step-8">
+      <div class="step-head"><span class="num">8</span>
+        <h3 lang="ko">레벨에서 찾기</h3><h3 lang="en">Find them in the level</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>Multi-slot 탭을 처음 열면 지금 레벨을 훑어서 slot이 2개 이상인 메쉬를 목록으로 보여줍니다. 탭 이름 옆 숫자가 찾은 개수입니다.</p>
+        <ul>
+          <li>레벨을 바꾸거나 액터를 추가했으면 <span class="ui">Scan level</span>을 다시 누릅니다.</li>
+          <li>위쪽 줄에 훑은 메쉬와 액터 수, 걸린 시간이 나옵니다. 이미 레벨에 올라온 메쉬만 확인해서 금방 끝납니다.</li>
+          <li>검색칸에 메쉬 이름이나 폴더 일부를 쓰면 걸러집니다. 열 제목을 누르면 정렬됩니다.</li>
+          <li><code>/Game</code> 안의 메쉬만 나옵니다. World Partition 레벨은 지금 로드된 액터만 훑습니다.</li>
+        </ul>
+      </div>
+      <div class="body" lang="en">
+        <p>The first time you open the Multi-slot tab, it scans the open level and lists meshes with two or more slots. The number on the tab is how many it found.</p>
+        <ul>
+          <li>After changing levels or adding actors, click <span class="ui">Scan level</span> again.</li>
+          <li>The status line shows how many meshes and actors were checked and how long it took. It only looks at meshes already loaded in the level, so it's quick.</li>
+          <li>Type part of a mesh name or folder in the search box to filter. Click a column header to sort.</li>
+          <li>Only meshes under <code>/Game</code> are listed. In World Partition levels, only loaded actors are scanned.</li>
+        </ul>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/09-multislot-scan.png" target="_blank" rel="noopener"><img src="images/09-multislot-scan.png" width="949" height="667" alt="Multi-slot 탭 / Multi-slot tab" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/09-multislot-scan.png</code></div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-9">
+      <div class="step-head"><span class="num">9</span>
+        <h3 lang="ko">Slot에 material 넣기</h3><h3 lang="en">Set a material on a slot</h3>
+      </div>
+      <div class="body" lang="ko">
+        <ol>
+          <li>목록에서 메쉬를 고릅니다.</li>
+          <li>아래 <span class="ui">Slots</span>에 그 메쉬의 slot과 지금 들어 있는 material이 나옵니다. 바꿀 slot을 고릅니다. <kbd>Ctrl</kbd>/<kbd>Shift</kbd>로 여러 개 골라도 됩니다.</li>
+          <li>맨 아래 material을 누르면 고른 slot에만 들어갑니다.</li>
+        </ol>
+        <ul>
+          <li>맨 아래 material 줄은 Palette 탭과 같은 preset을 씁니다. 오른쪽 드롭다운으로 바꿀 수 있습니다.</li>
+          <li>slot을 고르지 않으면 material이 흐리게 나오고 눌리지 않습니다.</li>
+          <li>저장과 <kbd>Ctrl</kbd>+<kbd>Z</kbd>는 Palette와 같습니다.</li>
+          <li>목록 줄에 마우스를 올리면 slot별 material이 툴팁으로 나옵니다.</li>
+        </ul>
+      </div>
+      <div class="body" lang="en">
+        <ol>
+          <li>Pick a mesh in the list.</li>
+          <li><span class="ui">Slots</span> below shows that mesh's slots and their current materials. Pick the slots to change. Use <kbd>Ctrl</kbd>/<kbd>Shift</kbd> for several.</li>
+          <li>Click a material at the bottom. Only the picked slots change.</li>
+        </ol>
+        <ul>
+          <li>The bottom row uses the same presets as the Palette tab. Switch presets with the dropdown on its right.</li>
+          <li>With no slot picked, the materials are dimmed and can't be clicked.</li>
+          <li>Saving and <kbd>Ctrl</kbd>+<kbd>Z</kbd> work the same as in Palette.</li>
+          <li>Hover a row in the list to see each slot's material.</li>
+        </ul>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/10-multislot-slots.png" target="_blank" rel="noopener"><img src="images/10-multislot-slots.png" alt="Slot 고르고 material 넣기 / Picking a slot" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/10-multislot-slots.png</code></div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-10">
+      <div class="step-head"><span class="num">10</span>
+        <h3 lang="ko">여러 메쉬를 한 번에 바꾸기</h3><h3 lang="en">Change many meshes at once</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>CAD 데이터는 같은 부품이 <code>_2</code>, <code>_3</code>처럼 따로따로 메쉬로 들어오는 경우가 많습니다. 이럴 때는 한 번에 바꿉니다.</p>
+        <ol>
+          <li>검색칸에 부품 이름 일부를 씁니다. 예: <code>BOLT</code></li>
+          <li>목록을 한 번 클릭하고 <kbd>Ctrl</kbd>+<kbd>A</kbd>로 검색된 메쉬를 전부 고릅니다.</li>
+          <li><span class="ui">Slots</span>가 묶여서 나옵니다. 오른쪽에서 묶는 기준을 고릅니다.
+            <ul>
+              <li><span class="ui">By material</span>: 지금 같은 material이 든 slot끼리 묶습니다.</li>
+              <li><span class="ui">By slot name</span>: slot 이름이 같은 것끼리 묶습니다. Datasmith CAD로 가져온 메쉬는 CAD material ID가 slot 이름이 되어서, 원래 같은 재질이던 slot이 한 줄로 모입니다.</li>
+            </ul>
+          </li>
+          <li>줄을 고르고 material을 누르면 고른 메쉬 전부에 들어갑니다.</li>
+        </ol>
+        <p class="muted">메쉬 수백 개를 한 번에 바꾸면 몇 초 걸릴 수 있고, 오래 걸리면 진행 창이 뜹니다.</p>
+      </div>
+      <div class="body" lang="en">
+        <p>CAD data often brings the same part in as separate meshes named <code>_2</code>, <code>_3</code> and so on. Change them together.</p>
+        <ol>
+          <li>Type part of the part name in the search box, for example <code>BOLT</code>.</li>
+          <li>Click the list once, then press <kbd>Ctrl</kbd>+<kbd>A</kbd> to pick every mesh the search found.</li>
+          <li><span class="ui">Slots</span> now shows grouped rows. Choose how to group them on the right:
+            <ul>
+              <li><span class="ui">By material</span>: slots that currently use the same material.</li>
+              <li><span class="ui">By slot name</span>: slots with the same name. Datasmith CAD imports name slots after the CAD material ID, so slots that started as the same CAD material stay together.</li>
+            </ul>
+          </li>
+          <li>Pick a row and click a material. It goes into that slot on every picked mesh.</li>
+        </ol>
+        <p class="muted">Changing hundreds of meshes can take a few seconds; a progress window appears if it does.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/11-multislot-group.png" target="_blank" rel="noopener"><img src="images/11-multislot-group.png" alt="여러 메쉬 묶어서 바꾸기 / Grouped slots" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/11-multislot-group.png</code></div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="step" id="step-11">
+      <div class="step-head"><span class="num">11</span>
+        <h3 lang="ko">레벨에서 위치 찾기, 에셋 열기</h3><h3 lang="en">Find in the level, open the asset</h3>
+      </div>
+      <div class="body" lang="ko">
+        <p>목록 아래 버튼은 고른 메쉬에 대해 동작합니다. 목록을 우클릭해도 같은 메뉴가 나옵니다.</p>
+        <ul>
+          <li><span class="ui">Select in level</span>: 그 메쉬를 쓰는 액터를 레벨에서 전부 선택하고 카메라를 그쪽으로 옮깁니다. 줄을 더블클릭해도 같습니다.</li>
+          <li>폴더 아이콘: 콘텐츠 브라우저에서 메쉬 에셋을 보여줍니다.</li>
+          <li>연필 아이콘: Static Mesh Editor로 엽니다. 한 번에 10개까지 열 수 있습니다.</li>
+        </ul>
+      </div>
+      <div class="body" lang="en">
+        <p>The buttons under the list act on the picked meshes. Right-clicking the list shows the same options.</p>
+        <ul>
+          <li><span class="ui">Select in level</span>: selects every actor that uses the mesh and moves the camera to them. Double-clicking a row does the same.</li>
+          <li>Folder icon: shows the mesh asset in the Content Browser.</li>
+          <li>Pencil icon: opens the Static Mesh Editor, up to 10 meshes at a time.</li>
+        </ul>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <a href="images/12-multislot-actions.png" target="_blank" rel="noopener"><img src="images/12-multislot-actions.png" alt="레벨에서 선택 / Select in level" onerror="this.closest('figure').classList.add('missing')"></a>
+          <div class="todo"><strong lang="ko">캡쳐 예정</strong><strong lang="en">Screenshot to be added</strong><code>Docs/images/12-multislot-actions.png</code></div>
+        </figure>
+      </div>
+    </article>
+  </section>
+
+  <!-- Preset sharing -->
+  <section class="part" id="presets">
+    <div class="part-head">
+      <span class="eyebrow" lang="ko">Preset 공유</span><span class="eyebrow" lang="en">Sharing presets</span>
+      <h2 lang="ko">다른 프로젝트에서 같은 preset 쓰기</h2><h2 lang="en">Use the same presets in another project</h2>
+    </div>
+    <article class="step">
+      <div class="body" lang="ko">
+        <p>preset은 플러그인 폴더 안 <code>Plugins/VMat/Config/VMatPresets.json</code>에 저장됩니다.</p>
+        <ul>
+          <li><code>VMat</code> 폴더를 다른 프로젝트로 복사하면 preset도 같이 갑니다. git으로 받는 사람도 같은 preset을 받습니다.</li>
+          <li>material은 <code>/Game/...</code> 경로로 저장됩니다. 다른 프로젝트에도 같은 경로에 있으면 그대로 쓰이고, 없으면 타일에 <span class="ui">Missing</span>이 뜹니다.</li>
+          <li>마지막에 쓰던 preset은 사람마다 따로 기억합니다(프로젝트 <code>Saved</code> 폴더). 공유 파일에는 들어가지 않습니다.</li>
+          <li>예전 버전이 프로젝트 <code>Config/DefaultEditor.ini</code>에 저장한 preset은, 플러그인에 json이 없으면 처음 열 때 json으로 옮겨집니다.</li>
+        </ul>
+      </div>
+      <div class="body" lang="en">
+        <p>Presets are saved inside the plugin folder, in <code>Plugins/VMat/Config/VMatPresets.json</code>.</p>
+        <ul>
+          <li>Copy the <code>VMat</code> folder to another project and the presets come with it. People who get the plugin from git get the same presets.</li>
+          <li>Materials are stored by their <code>/Game/...</code> path. If the other project has them at the same path, they just work; otherwise the tile shows <span class="ui">Missing</span>.</li>
+          <li>The last preset you used is remembered per person (in the project's <code>Saved</code> folder) and isn't part of the shared file.</li>
+          <li>Presets that an older version saved in the project's <code>Config/DefaultEditor.ini</code> move into the json the first time V-Mat opens, if the plugin has no json yet.</li>
+        </ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- Contact -->
+  <section class="contact" id="contact">
+    <p lang="ko">사용하다 막히거나 궁금한 점이 있으면 <strong>최필립</strong>(GMTCK CX Team)에게 물어보세요.</p>
+    <p lang="en">If you get stuck or have questions, ask <strong>Philip Choi</strong> (GMTCK CX Team).</p>
+  </section>
+
+  <footer>
+    <span>V-Mat 0.1.0</span>
+    <span>Unreal Engine 5.5</span>
+    <span lang="ko">작성자 최필립 · GMTCK CX Team</span>
+    <span lang="en">Author Philip Choi · GMTCK CX Team</span>
+  </footer>
+</main>
+</div>
+
+<script>
+(function () {
+  var doc = document.getElementById('doc');
+  var titles = { ko: 'V-Mat 사용법', en: 'V-Mat Guide' };
+
+  function setLang(lang) {
+    doc.setAttribute('data-lang', lang);
+    document.documentElement.lang = lang;
+    document.title = titles[lang];
+    document.querySelectorAll('[data-set-lang]').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.getAttribute('data-set-lang') === lang));
+    });
+    try { localStorage.setItem('vmat-doc-lang', lang); } catch (e) {}
+  }
+
+  document.querySelectorAll('[data-set-lang]').forEach(function (button) {
+    button.addEventListener('click', function () { setLang(button.getAttribute('data-set-lang')); });
+  });
+
+  var saved = null;
+  try { saved = localStorage.getItem('vmat-doc-lang'); } catch (e) {}
+  if (saved === 'ko' || saved === 'en') { setLang(saved); }
+})();
+</script>
+</body>
+</html>
