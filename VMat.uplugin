@@ -1,0 +1,25 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "V-Mat",
+	"Description": "Easy materialization of staticmesh",
+	"Category": "Editor",
+	"CreatedBy": "Philip Choi",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EngineVersion": "5.5.0",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "VMatEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
