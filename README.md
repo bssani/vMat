@@ -26,8 +26,16 @@
 
 바꾸는 즉시 저장된다. 저장 버튼은 따로 없다. 에디터를 껐다 켜면 마지막에 쓰던 preset이 다시 열린다.
 
-preset은 프로젝트마다 따로 저장된다. 위치는 `Config/DefaultEditor.ini` 안의
-`[/Script/VMatEditor.VMatPresetSettings]` 부분이다. Saved 폴더를 지워도 남는다.
+### preset 저장 위치와 다른 프로젝트로 옮기기
+
+preset은 **플러그인 폴더 안** `Config/VMatPresets.json`에 저장된다.
+
+- 플러그인 폴더(`Plugins/VMat`)를 다른 프로젝트에 복사하면 preset도 같이 간다. git으로 받는 사람도 같은 preset을 받는다.
+- material은 `/Game/...` 경로로 저장된다. 다른 프로젝트에도 같은 경로에 material이 있으면 그대로 쓰인다. 없으면 타일에 **Missing**이 뜬다.
+- 마지막에 쓰던 preset은 사람마다 달라서 json에 안 들어간다. 프로젝트의 `Saved/Config/.../EditorPerProjectUserSettings.ini`에 따로 저장된다.
+- json을 직접 고치다 깨지면 V-Mat이 알림을 띄우고, 고칠 때까지 preset을 저장하지 않는다. 깨진 파일을 빈 내용으로 덮어쓰지 않으려고 그렇다.
+
+예전 버전은 프로젝트 `Config/DefaultEditor.ini`에 저장했다. 플러그인에 json이 아직 없으면, 처음 열 때 그 ini의 preset을 json으로 한 번 옮긴다. ini는 건드리지 않는다.
 
 ### Material 추가 / 삭제
 
