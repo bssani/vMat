@@ -1058,7 +1058,7 @@ FText SVMatMultiSlotTab::GetPreviewHintText() const
 	{
 		Lines.Add(LOCTEXT("PreviewDimmed", "Selected slots in color, the rest dimmed"));
 	}
-	Lines.Add(LOCTEXT("PreviewControls", "Drag to orbit  ·  scroll to zoom  ·  F to frame"));
+	Lines.Add(LOCTEXT("PreviewControls", "Drag to orbit  ·  scroll to zoom  ·  F to re-center"));
 
 	return FText::Join(FText::FromString(TEXT("\n")), Lines);
 }

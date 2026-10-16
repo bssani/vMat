@@ -30,11 +30,21 @@ public:
 
 protected:
 	virtual TSharedRef<FEditorViewportClient> MakeEditorViewportClient() override;
-	// F 누르면 mesh에 다시 맞춰
+	virtual void PopulateViewportOverlays(TSharedRef<SOverlay> Overlay) override;
+	// F 누르면 지금 배율 그대로 mesh를 가운데로
 	virtual void OnFocusViewportToSelection() override;
 
 private:
-	void FocusOnMesh();
+	void FrameMesh();
+
+	// 배율. 1이면 mesh가 창에 딱 맞아
+	void SetZoom(float NewZoom);
+	void RememberZoom();
+	void SaveZoom() const;
+	int32 GetZoomPercent() const;
+	void OnZoomPercentChanged(int32 Percent);
+	void OnZoomPercentCommitted(int32 Percent, ETextCommit::Type CommitType);
+	FReply OnFitClicked();
 
 	TSharedPtr<FAdvancedPreviewScene> PreviewScene;
 	TSharedPtr<FVMatMeshPreviewClient> ViewportClient;
@@ -42,4 +52,6 @@ private:
 	UStaticMeshComponent* MeshComponent = nullptr;
 	TStrongObjectPtr<UMaterialInstanceDynamic> DimMaterial;
 	TSet<int32> DimmedSlots;
+	// 다음 mesh도 이 배율로 열어. 개인 설정에 저장돼서 에디터 껐다 켜도 남아
+	float Zoom = 1.f;
 };
