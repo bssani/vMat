@@ -302,7 +302,47 @@ TSharedRef<SWidget> SVMatPaletteTab::MakeSelectionFooter()
 					})
 				]
 			]
-			// 건너뛰는거 있으면 경고 한줄. multi-slot이면 그 탭으로 바로 가는 링크
+			// multi-slot mesh는 slot 전부 같은걸로 덮이니까 미리 알려줘. slot별로 하고 싶으면 그 탭으로 바로 가
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(0.f, 6.f, 0.f, 0.f)
+			[
+				SNew(SHorizontalBox)
+				.Visibility_Lambda([this] { return MultiSlotMeshes.IsEmpty() ? EVisibility::Collapsed : EVisibility::Visible; })
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(0.f, 0.f, 6.f, 0.f)
+				[
+					SNew(SImage)
+					.Image(FAppStyle::GetBrush("Icons.Info"))
+					.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+				]
+				+ SHorizontalBox::Slot()
+				.FillWidth(1.f)
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text_Lambda([this]
+					{
+						return FText::Format(LOCTEXT("MultiSlotIncluded", "{0} multi-slot {0}|plural(one=mesh,other=meshes): every slot gets the same material"), MultiSlotMeshes.Num());
+					})
+					.Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
+					.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+					.AutoWrapText(true)
+				]
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(8.f, 0.f, 0.f, 0.f)
+				[
+					SNew(SHyperlink)
+					.Text(LOCTEXT("EditPerSlot", "Edit per slot"))
+					.ToolTipText(LOCTEXT("EditPerSlotTooltip", "Open the Multi-slot tab with these meshes selected to set each slot separately"))
+					.OnNavigate(this, &SVMatPaletteTab::OnShowMultiSlotClicked)
+				]
+			]
+			// 건너뛰는거 있으면 경고 한줄
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(0.f, 6.f, 0.f, 0.f)
@@ -327,17 +367,6 @@ TSharedRef<SWidget> SVMatPaletteTab::MakeSelectionFooter()
 					.Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
 					.ColorAndOpacity(FSlateColor::UseSubduedForeground())
 					.AutoWrapText(true)
-				]
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.VAlign(VAlign_Center)
-				.Padding(8.f, 0.f, 0.f, 0.f)
-				[
-					SNew(SHyperlink)
-					.Text(LOCTEXT("ShowMultiSlot", "Show multi-slot"))
-					.ToolTipText(LOCTEXT("ShowMultiSlotTooltip", "Open the Multi-slot tab with these meshes selected"))
-					.Visibility_Lambda([this] { return SkippedMultiSlotMeshes.IsEmpty() ? EVisibility::Collapsed : EVisibility::Visible; })
-					.OnNavigate(this, &SVMatPaletteTab::OnShowMultiSlotClicked)
 				]
 			]
 			+ SVerticalBox::Slot()
@@ -634,10 +663,10 @@ void SVMatPaletteTab::RefreshSelectionSummary()
 	SkippedText = VMatApplier::DescribeSkipped(Targets);
 	SelectionLabels = FText::FromString(FString::Join(Targets.ActorLabels, TEXT("\n")));
 
-	SkippedMultiSlotMeshes.Reset();
+	MultiSlotMeshes.Reset();
 	for (UStaticMesh* Mesh : Targets.MultiSlotMeshes)
 	{
-		SkippedMultiSlotMeshes.Add(Mesh);
+		MultiSlotMeshes.Add(Mesh);
 	}
 }
 
@@ -649,7 +678,7 @@ void SVMatPaletteTab::OnSelectionChanged(UObject* Selection)
 void SVMatPaletteTab::OnShowMultiSlotClicked()
 {
 	TArray<UStaticMesh*> Meshes;
-	for (const TWeakObjectPtr<UStaticMesh>& Mesh : SkippedMultiSlotMeshes)
+	for (const TWeakObjectPtr<UStaticMesh>& Mesh : MultiSlotMeshes)
 	{
 		if (Mesh.IsValid())
 		{

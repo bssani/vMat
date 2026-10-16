@@ -22,7 +22,7 @@ class SVMatPaletteTab : public SCompoundWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SVMatPaletteTab) {}
-		// 요약에서 multi-slot 보기 누르면 불러. 탭 넘기는건 바깥에서 해
+		// 요약에서 Edit per slot 누르면 불러. 탭 넘기는건 바깥에서 해
 		SLATE_EVENT(FOnShowMultiSlotMeshes, OnShowMultiSlotMeshes)
 	SLATE_END_ARGS()
 
@@ -82,7 +82,7 @@ private:
 	int32 NumMeshesToChange = 0;
 	FText SkippedText;
 	FText SelectionLabels;
-	// 선택 바뀌기 전까지 들고 있어서 weak로 둬
-	TArray<TWeakObjectPtr<UStaticMesh>> SkippedMultiSlotMeshes;
+	// 선택한 mesh 중 slot 여러개인거. 선택 바뀌기 전까지 들고 있어서 weak로 둬
+	TArray<TWeakObjectPtr<UStaticMesh>> MultiSlotMeshes;
 	FDelegateHandle SelectionChangedHandle;
 };

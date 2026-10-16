@@ -542,9 +542,9 @@ footer {
           <li><strong>같은 메쉬를 쓰는 다른 액터도 같이 바뀝니다.</strong> 볼트 하나만 골라도 같은 볼트 메쉬는 전부 바뀝니다. 알림에 함께 바뀐 액터 수가 나옵니다.</li>
           <li>바뀐 메쉬 에셋은 <strong>바로 저장</strong>됩니다. 레벨은 평소처럼 <kbd>Ctrl</kbd>+<kbd>S</kbd>로 저장합니다.</li>
           <li>되돌리려면 <kbd>Ctrl</kbd>+<kbd>Z</kbd>를 한 번 누릅니다. 되돌린 뒤에는 메쉬를 다시 저장해야 합니다.</li>
+          <li><strong>slot이 2개 이상인 메쉬는 모든 slot에 같은 material이 들어갑니다.</strong> slot이 5개면 5개 다 바뀝니다. 선택에 이런 메쉬가 있으면 아래 줄에 몇 개인지 나오고, 옆 <span class="ui">Edit per slot</span>을 누르면 Multi-slot 탭에서 slot별로 넣을 수 있습니다.</li>
           <li>이런 메쉬는 <strong>건너뜁니다</strong>. 건너뛴 내용은 아래 줄에 노란 경고로 나옵니다.
             <ul>
-              <li>slot이 2개 이상인 메쉬: 경고 옆 <span class="ui">Show multi-slot</span>을 누르면 Multi-slot 탭에서 바로 이어서 할 수 있습니다.</li>
               <li>엔진이나 다른 플러그인 메쉬(<code>/Game</code> 밖)</li>
               <li>메쉬가 없는 액터(라이트 등)</li>
             </ul>
@@ -557,9 +557,9 @@ footer {
           <li><strong>Other actors that use the same mesh change too.</strong> Select one bolt and every actor using that bolt mesh changes. The notification tells you how many actors changed.</li>
           <li>Changed mesh assets are <strong>saved right away</strong>. Save the level as usual with <kbd>Ctrl</kbd>+<kbd>S</kbd>.</li>
           <li>Press <kbd>Ctrl</kbd>+<kbd>Z</kbd> once to undo the whole click. Save the meshes again after undoing.</li>
+          <li><strong>Meshes with two or more slots get the material in every slot.</strong> A mesh with 5 slots gets it in all 5. When the selection has such meshes, the bottom line says how many; click <span class="ui">Edit per slot</span> next to it to set slots separately in the Multi-slot tab.</li>
           <li>These are <strong>skipped</strong>, and a yellow warning on the bottom line says so:
             <ul>
-              <li>Meshes with two or more slots. Click <span class="ui">Show multi-slot</span> next to the warning to continue in the Multi-slot tab.</li>
               <li>Engine or other plugin meshes (outside <code>/Game</code>)</li>
               <li>Actors without a mesh, such as lights</li>
             </ul>
@@ -590,8 +590,8 @@ footer {
     <div class="part-head">
       <span class="eyebrow">Multi-slot</span>
       <h2 lang="ko">Slot이 여러 개인 메쉬</h2><h2 lang="en">Meshes with several slots</h2>
-      <p lang="ko">Palette는 slot이 2개 이상인 메쉬를 건너뜁니다. 이런 메쉬는 이 탭에서 slot을 골라 따로 입힙니다.</p>
-      <p lang="en">Palette skips meshes with two or more slots. Use this tab to pick a slot and set it on its own.</p>
+      <p lang="ko">Palette는 slot이 2개 이상인 메쉬의 모든 slot에 같은 material을 넣습니다. slot마다 다르게 넣으려면 이 탭에서 slot을 골라 따로 입힙니다.</p>
+      <p lang="en">Palette puts the same material in every slot of a mesh with two or more slots. To give each slot its own material, pick slots in this tab and set them separately.</p>
     </div>
 
     <article class="step" id="step-8">
@@ -640,6 +640,14 @@ footer {
           <li>저장과 <kbd>Ctrl</kbd>+<kbd>Z</kbd>는 Palette와 같습니다.</li>
           <li>목록 줄에 마우스를 올리면 slot별 material이 툴팁으로 나옵니다.</li>
         </ul>
+        <p><strong>오른쪽 미리보기</strong>에 고른 메쉬가 3D로 나옵니다.</p>
+        <ul>
+          <li>slot을 고르면 그 slot만 원래 material로 보이고 나머지는 어두운 회색이 됩니다. slot 이름만 봐서는 어느 부분인지 모를 때 쓰면 됩니다.</li>
+          <li>material을 넣으면 미리보기에도 바로 반영됩니다.</li>
+          <li>왼쪽 버튼으로 끌면 돌아가고, 휠로 확대/축소, <kbd>F</kbd>를 누르면 메쉬에 다시 맞춥니다.</li>
+          <li>메쉬를 여러 개 고르면 마지막에 누른 메쉬가 나옵니다.</li>
+          <li>미리보기와 목록 사이 경계를 끌면 크기가 바뀝니다.</li>
+        </ul>
       </div>
       <div class="body" lang="en">
         <ol>
@@ -652,6 +660,14 @@ footer {
           <li>With no slot picked, the materials are dimmed and can't be clicked.</li>
           <li>Saving and <kbd>Ctrl</kbd>+<kbd>Z</kbd> work the same as in Palette.</li>
           <li>Hover a row in the list to see each slot's material.</li>
+        </ul>
+        <p>The <strong>preview on the right</strong> shows the picked mesh in 3D.</p>
+        <ul>
+          <li>When you pick slots, only those keep their material and the rest turn dark gray. Use it when a slot name doesn't tell you which part it is.</li>
+          <li>A material you set shows up in the preview right away.</li>
+          <li>Drag with the left mouse button to orbit, scroll to zoom, and press <kbd>F</kbd> to frame the mesh again.</li>
+          <li>With several meshes picked, it shows the one you clicked last.</li>
+          <li>Drag the border between the preview and the lists to resize them.</li>
         </ul>
       </div>
       <div class="shots">

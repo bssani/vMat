@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/ScopedSlowTask.h"
+#include "PhysicsEngine/BodySetup.h"
 #include "ScopedTransaction.h"
 #include "Selection.h"
 #include "UObject/UObjectIterator.h"
@@ -42,6 +43,39 @@ namespace VMatApplier
 			{
 				Component->SetMaterial(SlotIndex, nullptr);
 			}
+		}
+	}
+
+	// SetMaterial은 부를때마다 mesh를 다시 build해서, slot 5개면 build도 5번이야
+	// slot 여러개 바꿀땐 한번에 바꾸고 build는 한번만 해
+	static void SetSlotMaterials(UStaticMesh* Mesh, TConstArrayView<int32> SlotIndices, UMaterialInterface* Material)
+	{
+		if (SlotIndices.Num() == 1)
+		{
+			Mesh->SetMaterial(SlotIndices[0], Material);
+			return;
+		}
+
+		// SetMaterial처럼 mesh description 먼저 올려놔야 undo 기록이 제대로 남아
+		for (int32 LODIndex = 0; LODIndex < Mesh->GetNumSourceModels(); ++LODIndex)
+		{
+			Mesh->GetMeshDescription(LODIndex);
+		}
+
+		FProperty* MaterialsProperty = FindFProperty<FProperty>(UStaticMesh::StaticClass(), UStaticMesh::GetStaticMaterialsName());
+		Mesh->PreEditChange(MaterialsProperty);
+		TArray<FStaticMaterial>& Materials = Mesh->GetStaticMaterials();
+		for (const int32 SlotIndex : SlotIndices)
+		{
+			Materials[SlotIndex].MaterialInterface = Material;
+		}
+		FPropertyChangedEvent ChangedEvent(MaterialsProperty);
+		Mesh->PostEditChangeProperty(ChangedEvent);
+
+		// physical material도 slot 따라가서 SetMaterial처럼 다시 만들어
+		if (UBodySetup* BodySetup = Mesh->GetBodySetup())
+		{
+			BodySetup->CreatePhysicsMeshes();
 		}
 	}
 
@@ -102,7 +136,6 @@ namespace VMatApplier
 		Targets.NumSelectedActors = SelectedActors.Num();
 
 		TSet<UStaticMesh*> MeshSet;
-		TSet<UStaticMesh*> MultiSlotMeshes;
 		TSet<UStaticMesh*> LockedMeshes;
 
 		for (AActor* Actor : SelectedActors)
@@ -127,21 +160,14 @@ namespace VMatApplier
 					continue;
 				}
 
-				if (IsMultiSlot(Mesh))
-				{
-					bool bAlreadyAdded = false;
-					MultiSlotMeshes.Add(Mesh, &bAlreadyAdded);
-					if (!bAlreadyAdded)
-					{
-						Targets.MultiSlotMeshes.Add(Mesh);
-					}
-					continue;
-				}
-
 				if (!MeshSet.Contains(Mesh))
 				{
 					MeshSet.Add(Mesh);
 					Targets.Meshes.Add(Mesh);
+					if (IsMultiSlot(Mesh))
+					{
+						Targets.MultiSlotMeshes.Add(Mesh);
+					}
 				}
 				Targets.Components.Add(Component);
 			}
@@ -159,10 +185,6 @@ namespace VMatApplier
 	FText DescribeSkipped(const FVMatApplyTargets& Targets)
 	{
 		TArray<FText> Parts;
-		if (Targets.MultiSlotMeshes.Num() > 0)
-		{
-			Parts.Add(FText::Format(LOCTEXT("SkippedMultiSlot", "{0} multi-slot mesh(es)"), Targets.MultiSlotMeshes.Num()));
-		}
 		if (Targets.NumLockedMeshes > 0)
 		{
 			Parts.Add(FText::Format(LOCTEXT("SkippedLocked", "{0} engine/plugin mesh(es)"), Targets.NumLockedMeshes));
@@ -195,18 +217,22 @@ namespace VMatApplier
 			return;
 		}
 
-		// 바꿀게 있는지 먼저 보고 transaction 열어. 이미 같은 material이면 SetMaterial 안 불러
-		// SetMaterial 한번 부를때마다 mesh를 다시 build해서 느려지거든
-		TArray<UStaticMesh*> MeshesToChange;
+		// 바꿀게 있는지 먼저 보고 transaction 열어. 이미 같은 material인 slot은 안 건드려
+		// mesh를 다시 build하는게 느려서 이미 전부 같은 material인 mesh는 아예 build 안 하게
+		TArray<TPair<UStaticMesh*, TArray<int32>>> MeshesToChange;
 		for (UStaticMesh* Mesh : Targets.Meshes)
 		{
+			TArray<int32> SlotIndices;
 			for (int32 SlotIndex = 0; SlotIndex < Mesh->GetStaticMaterials().Num(); ++SlotIndex)
 			{
 				if (Mesh->GetMaterial(SlotIndex) != Material)
 				{
-					MeshesToChange.Add(Mesh);
-					break;
+					SlotIndices.Add(SlotIndex);
 				}
+			}
+			if (!SlotIndices.IsEmpty())
+			{
+				MeshesToChange.Emplace(Mesh, MoveTemp(SlotIndices));
 			}
 		}
 
@@ -228,19 +254,21 @@ namespace VMatApplier
 			return;
 		}
 
+		const FText MaterialName = FText::FromString(Material->GetName());
+		TArray<UStaticMesh*> ChangedMeshes;
 		{
 			// 버튼 한번 누른건 Ctrl+Z 한번으로 되돌아가게 하나로 묶어
-			FScopedTransaction Transaction(FText::Format(LOCTEXT("ApplyTransaction", "V-Mat: Apply {0}"), FText::FromString(Material->GetName())));
+			FScopedTransaction Transaction(FText::Format(LOCTEXT("ApplyTransaction", "V-Mat: Apply {0}"), MaterialName));
 
-			for (UStaticMesh* Mesh : MeshesToChange)
+			// mesh 수백개를 한번에 바꾸면 몇초 걸려서, 오래 걸릴때만 진행창 띄워
+			FScopedSlowTask SlowTask(MeshesToChange.Num(), FText::Format(LOCTEXT("Applying", "Applying {0}..."), MaterialName));
+			SlowTask.MakeDialogDelayed(0.5f);
+
+			for (const TPair<UStaticMesh*, TArray<int32>>& Change : MeshesToChange)
 			{
-				for (int32 SlotIndex = 0; SlotIndex < Mesh->GetStaticMaterials().Num(); ++SlotIndex)
-				{
-					if (Mesh->GetMaterial(SlotIndex) != Material)
-					{
-						Mesh->SetMaterial(SlotIndex, Material);
-					}
-				}
+				SlowTask.EnterProgressFrame();
+				SetSlotMaterials(Change.Key, Change.Value, Material);
+				ChangedMeshes.Add(Change.Key);
 			}
 
 			for (UStaticMeshComponent* Component : ComponentsToClear)
@@ -249,12 +277,15 @@ namespace VMatApplier
 			}
 		}
 
-		const bool bSaved = SaveMeshes(MeshesToChange);
+		const bool bSaved = SaveMeshes(ChangedMeshes);
 
-		const TSet<UStaticMesh*> ChangedMeshes(Targets.Meshes);
 		FText Message = FText::Format(
 			LOCTEXT("Applied", "Applied {0} to {1} mesh(es). {2} actor(s) in the level use them."),
-			FText::FromString(Material->GetName()), Targets.Meshes.Num(), CountActorsUsing(ChangedMeshes));
+			MaterialName, Targets.Meshes.Num(), CountActorsUsing(TSet<UStaticMesh*>(Targets.Meshes)));
+		if (Targets.MultiSlotMeshes.Num() > 0)
+		{
+			Message = FText::Format(LOCTEXT("AppliedMultiSlot", "{0}\n{1} multi-slot mesh(es): every slot got {2}."), Message, Targets.MultiSlotMeshes.Num(), MaterialName);
+		}
 		if (!Skipped.IsEmpty())
 		{
 			Message = FText::Format(LOCTEXT("AppliedWithSkipped", "{0}\n{1}"), Message, Skipped);
@@ -295,16 +326,17 @@ namespace VMatApplier
 			return;
 		}
 
-		// 이미 같은 material인 slot은 SetMaterial 안 불러. 부를때마다 mesh를 다시 build하거든
-		TArray<FVMatMeshSlot> SlotsToChange;
+		// 이미 같은 material인 slot은 안 건드려. mesh 다시 build하는게 느리거든
+		TArray<TPair<UStaticMesh*, TArray<int32>>> SlotsToChange;
 		for (const TPair<UStaticMesh*, TArray<int32>>& Pair : SlotsByMesh)
 		{
-			for (const int32 SlotIndex : Pair.Value)
+			TArray<int32> SlotIndices = Pair.Value.FilterByPredicate([&Pair, Material](const int32 SlotIndex)
 			{
-				if (Pair.Key->GetMaterial(SlotIndex) != Material)
-				{
-					SlotsToChange.Add({ Pair.Key, SlotIndex });
-				}
+				return Pair.Key->GetMaterial(SlotIndex) != Material;
+			});
+			if (!SlotIndices.IsEmpty())
+			{
+				SlotsToChange.Emplace(Pair.Key, MoveTemp(SlotIndices));
 			}
 		}
 
@@ -343,11 +375,11 @@ namespace VMatApplier
 			FScopedSlowTask SlowTask(SlotsToChange.Num(), FText::Format(LOCTEXT("ApplyingSlots", "Applying {0}..."), MaterialName));
 			SlowTask.MakeDialogDelayed(0.5f);
 
-			for (const FVMatMeshSlot& Slot : SlotsToChange)
+			for (const TPair<UStaticMesh*, TArray<int32>>& Change : SlotsToChange)
 			{
 				SlowTask.EnterProgressFrame();
-				Slot.Mesh->SetMaterial(Slot.SlotIndex, Material);
-				ChangedMeshes.AddUnique(Slot.Mesh);
+				SetSlotMaterials(Change.Key, Change.Value, Material);
+				ChangedMeshes.Add(Change.Key);
 			}
 
 			for (const TPair<UStaticMeshComponent*, int32>& Override : OverridesToClear)

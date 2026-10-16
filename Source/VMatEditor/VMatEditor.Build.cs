@@ -8,6 +8,7 @@ public class VMatEditor : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
+			"AdvancedPreviewScene",
 			"ContentBrowser",
 			"Core",
 			"CoreUObject",

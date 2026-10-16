@@ -10,8 +10,8 @@
 
 창 맨 위에 탭이 두 개 있다.
 
-- **Palette**: preset에 넣어둔 material을 선택한 mesh에 입힌다.
-- **Multi-slot**: 레벨에서 slot이 여러 개인 mesh를 찾아서 목록으로 보여준다.
+- **Palette**: preset에 넣어둔 material을 선택한 mesh에 입힌다. slot이 여러 개면 slot 전부에 같은 걸 넣는다.
+- **Multi-slot**: 레벨에서 slot이 여러 개인 mesh를 찾아서 slot마다 따로 넣는다.
 
 ## Palette 탭
 
@@ -59,12 +59,13 @@ material 에셋을 지우거나 옮겨서 못 찾으면 타일에 **Missing**이
 - 레벨은 자동 저장 안 된다. 평소처럼 Ctrl+S로 저장한다.
 - **Ctrl+Z 한 번**이면 누른 게 통째로 되돌아간다. 이미 저장된 mesh는 되돌린 다음 다시 저장해야 한다.
 - 이미 같은 material이면 아무것도 안 바뀐다.
+- mesh 수백 개를 한 번에 바꾸면 몇 초 걸릴 수 있다. 오래 걸리면 진행창이 뜬다.
 
 ### 주의
 
 - **같은 mesh를 쓰는 다른 actor도 같이 바뀐다.** 원본을 바꾸는 거라서 그렇다. 볼트 하나만 선택해도 같은 볼트 mesh 쓰는 건 다 바뀐다. 알림에 레벨에서 같이 바뀐 actor 수가 나온다.
+- **slot이 여러 개인 mesh는 slot 전부에 같은 material이 들어간다.** slot이 5개면 5개 다 바뀐다. 선택에 이런 mesh가 있으면 요약 줄에 몇 개인지 나온다. 옆의 **Edit per slot**을 누르면 Multi-slot 탭에서 그 mesh들이 골라진 채로 열리고, 거기서 slot별로 넣으면 된다.
 - 이런 건 **건너뛴다**. 건너뛴 건 아래 요약과 알림에 나온다.
-  - **slot이 여러 개인 mesh**: 한 번에 다 덮어쓰면 안 돼서 건너뛴다. 요약 줄의 **Show multi-slot**을 누르면 Multi-slot 탭에서 그 mesh들이 골라진 채로 열리고, 거기서 slot별로 넣으면 된다.
   - **/Game 밖에 있는 mesh**: 엔진 기본 도형(Cube 같은 거)이나 다른 플러그인 에셋은 안 건드린다.
   - **mesh가 없는 actor**: Light, PlayerStart 같은 거
 - 예전 툴처럼 actor(component)에 따로 material이 덮여 있으면 그건 지운다. 남아 있으면 원본을 바꿔도 월드에 안 보이기 때문이다.
@@ -73,11 +74,20 @@ material 에셋을 지우거나 옮겨서 못 찾으면 타일에 **Missing**이
 
 지금 열린 레벨에서 material slot이 2개 이상인 mesh를 찾고, slot마다 따로 material을 넣는다. /Game 안에 있는 mesh만 나온다.
 
-화면은 위에서부터 이렇게 나뉜다. 위 목록과 아래 slot 목록 사이 경계를 끌면 크기가 바뀐다.
+화면은 이렇게 나뉜다. 사이 경계를 끌면 크기가 바뀐다.
 
-1. **mesh 목록**: slot 여러 개인 mesh
-2. **Slots**: 위에서 고른 mesh의 slot
-3. **material 줄**: 지금 preset의 material. Palette 탭과 같은 preset을 쓰고, 오른쪽 드롭다운으로 바꿀 수 있다.
+1. **mesh 목록** (왼쪽 위): slot 여러 개인 mesh
+2. **Slots** (왼쪽 아래): 위에서 고른 mesh의 slot
+3. **미리보기** (오른쪽): 고른 mesh를 3D로 보여준다.
+4. **material 줄** (맨 아래): 지금 preset의 material. Palette 탭과 같은 preset을 쓰고, 오른쪽 드롭다운으로 바꿀 수 있다.
+
+### 미리보기
+
+- mesh를 고르면 오른쪽에 그 mesh가 나온다. 여러 개 고르면 마지막에 누른 mesh가 나온다.
+- Slots에서 slot을 고르면 고른 slot만 원래 material로 보이고 나머지는 어두운 회색이 된다. slot 이름만 봐서는 어느 부분인지 모를 때 쓰면 된다.
+- material을 넣으면 미리보기에도 바로 반영된다.
+- 왼쪽 버튼으로 끌면 돌아가고, 휠로 확대/축소, F를 누르면 mesh에 다시 맞춘다.
+- mesh를 안 고르면 미리보기는 그리지 않는다.
 
 ### slot에 material 넣기
 

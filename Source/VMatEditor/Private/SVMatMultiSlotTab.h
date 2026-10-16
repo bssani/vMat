@@ -12,10 +12,11 @@ class AActor;
 class FAssetThumbnailPool;
 class SHorizontalBox;
 class SSearchBox;
+class SVMatMeshPreview;
 class UMaterialInterface;
 class UStaticMesh;
 
-// Multi-slot 탭. 위에 slot 여러개인 mesh 목록, 가운데 고른 mesh의 slot, 아래 preset material 줄
+// Multi-slot 탭. 왼쪽 위에 slot 여러개인 mesh 목록, 왼쪽 아래 고른 mesh의 slot, 오른쪽 미리보기, 맨 아래 preset material 줄
 // slot 고르고 material 누르면 그 slot에만 들어가
 class SVMatMultiSlotTab : public SCompoundWidget
 {
@@ -44,6 +45,7 @@ private:
 
 	TSharedRef<SWidget> MakeMeshSection();
 	TSharedRef<SWidget> MakeSlotSection();
+	TSharedRef<SWidget> MakePreviewSection();
 	TSharedRef<SWidget> MakeMaterialStrip();
 
 	// mesh 목록
@@ -76,8 +78,14 @@ private:
 	void RefreshSlotGroups();
 	TSharedRef<ITableRow> OnGenerateSlotRow(FSlotItem Item, const TSharedRef<STableViewBase>& OwnerTable);
 	void OnGroupingChanged(EVMatSlotGrouping NewGrouping);
+	void OnSlotSelectionChanged(FSlotItem Item, ESelectInfo::Type SelectInfo);
 	bool HasSlotSelection() const;
 	FText GetSlotHeaderText() const;
+
+	// 미리보기
+	void RefreshPreview();
+	bool HasPreviewMesh() const;
+	FText GetPreviewHintText() const;
 
 	// material 줄
 	void RebuildStripTiles();
@@ -103,6 +111,10 @@ private:
 	TSharedPtr<SListView<FSlotItem>> SlotListView;
 	EVMatSlotGrouping Grouping = EVMatSlotGrouping::Material;
 	int32 NumSlotMeshes = 0;
+
+	TSharedPtr<SVMatMeshPreview> MeshPreview;
+	// 미리보기에 띄운 줄. mesh 여러개 골랐으면 마지막에 누른거
+	FItem PreviewItem;
 
 	TSharedPtr<SHorizontalBox> MaterialStrip;
 	TSharedPtr<FAssetThumbnailPool> ThumbnailPool;

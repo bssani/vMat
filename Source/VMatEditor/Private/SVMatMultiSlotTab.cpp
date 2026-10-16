@@ -13,6 +13,7 @@
 #include "Styling/SlateIconFinder.h"
 #include "Subsystems/AssetEditorSubsystem.h"
 #include "SVMatMaterialTile.h"
+#include "SVMatMeshPreview.h"
 #include "VMatMaterialApplier.h"
 #include "VMatPresetSettings.h"
 #include "VMatUI.h"
@@ -187,22 +188,38 @@ void SVMatMultiSlotTab::Construct(const FArguments& InArgs)
 				]
 			]
 		]
-		// 위아래 경계 끌어서 mesh 목록이랑 slot 목록 크기 조절할 수 있어
+		// 왼쪽은 mesh 목록이랑 slot 목록, 오른쪽은 미리보기. 경계 끌어서 크기 조절할 수 있어
 		+ SVerticalBox::Slot()
 		.FillHeight(1.f)
 		[
 			SNew(SSplitter)
-			.Orientation(Orient_Vertical)
+			.Orientation(Orient_Horizontal)
 			+ SSplitter::Slot()
-			.Value(0.5f)
+			.Value(0.6f)
 			[
-				MakeMeshSection()
+				SNew(SSplitter)
+				.Orientation(Orient_Vertical)
+				+ SSplitter::Slot()
+				.Value(0.5f)
+				[
+					MakeMeshSection()
+				]
+				+ SSplitter::Slot()
+				.Value(0.5f)
+				[
+					MakeSlotSection()
+				]
 			]
 			+ SSplitter::Slot()
-			.Value(0.5f)
+			.Value(0.4f)
 			[
-				MakeSlotSection()
+				MakePreviewSection()
 			]
+		]
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		[
+			MakeMaterialStrip()
 		]
 	];
 
@@ -395,6 +412,7 @@ TSharedRef<SWidget> SVMatMultiSlotTab::MakeSlotSection()
 					.ListItemsSource(&SlotGroups)
 					.SelectionMode(ESelectionMode::Multi)
 					.OnGenerateRow(this, &SVMatMultiSlotTab::OnGenerateSlotRow)
+					.OnSelectionChanged(this, &SVMatMultiSlotTab::OnSlotSelectionChanged)
 				]
 				+ SOverlay::Slot()
 				.HAlign(HAlign_Center)
@@ -408,11 +426,68 @@ TSharedRef<SWidget> SVMatMultiSlotTab::MakeSlotSection()
 					.Justification(ETextJustify::Center)
 				]
 			]
-		]
-		+ SVerticalBox::Slot()
-		.AutoHeight()
+		];
+}
+
+TSharedRef<SWidget> SVMatMultiSlotTab::MakePreviewSection()
+{
+	// 미리보기 위에 얹는 글자. 배경이 밝을수도 있어서 그림자 깔아
+	auto OverlayText = [](TAttribute<FText> Text, const FSlateFontInfo& Font, const FLinearColor& Color)
+	{
+		return SNew(STextBlock)
+			.Text(Text)
+			.Font(Font)
+			.ColorAndOpacity(Color)
+			.ShadowOffset(FVector2D(1.f, 1.f))
+			.ShadowColorAndOpacity(FLinearColor(0.f, 0.f, 0.f, 0.7f));
+	};
+
+	return SNew(SBorder)
+		.BorderImage(FAppStyle::GetBrush("Brushes.Recessed"))
+		.Padding(0.f)
 		[
-			MakeMaterialStrip()
+			SNew(SOverlay)
+			+ SOverlay::Slot()
+			[
+				// mesh 없을땐 숨겨둬. 숨어있으면 안 그려서 GPU도 안 써
+				SAssignNew(MeshPreview, SVMatMeshPreview)
+				.Visibility_Lambda([this] { return HasPreviewMesh() ? EVisibility::Visible : EVisibility::Hidden; })
+			]
+			+ SOverlay::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Top)
+			.Padding(10.f, 8.f)
+			[
+				SNew(SVerticalBox)
+				.Visibility_Lambda([this] { return HasPreviewMesh() ? EVisibility::HitTestInvisible : EVisibility::Collapsed; })
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					OverlayText(TAttribute<FText>::CreateLambda([this]
+						{
+							return PreviewItem.IsValid() ? FText::FromString(PreviewItem->Name) : FText::GetEmpty();
+						}),
+						FCoreStyle::GetDefaultFontStyle("Bold", 9), FLinearColor::White)
+				]
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(0.f, 2.f, 0.f, 0.f)
+				[
+					OverlayText(TAttribute<FText>::CreateSP(this, &SVMatMultiSlotTab::GetPreviewHintText),
+						FCoreStyle::GetDefaultFontStyle("Regular", 8), FLinearColor(1.f, 1.f, 1.f, 0.7f))
+				]
+			]
+			+ SOverlay::Slot()
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Center)
+			.Padding(16.f)
+			[
+				SNew(STextBlock)
+				.Visibility_Lambda([this] { return HasPreviewMesh() ? EVisibility::Collapsed : EVisibility::HitTestInvisible; })
+				.Text(LOCTEXT("PreviewEmpty", "Select a mesh to preview it."))
+				.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+				.Justification(ETextJustify::Center)
+			]
 		];
 }
 
@@ -594,6 +669,12 @@ TSharedRef<ITableRow> SVMatMultiSlotTab::OnGenerateRow(FItem Item, const TShared
 
 void SVMatMultiSlotTab::OnMeshSelectionChanged(FItem Item, ESelectInfo::Type SelectInfo)
 {
+	// 여러개 골라도 미리보기엔 마지막에 누른 줄을 띄워
+	if (Item.IsValid() && ListView->IsItemSelected(Item))
+	{
+		PreviewItem = Item;
+	}
+
 	if (!bUpdatingMeshSelection)
 	{
 		RefreshSlotGroups();
@@ -822,6 +903,8 @@ void SVMatMultiSlotTab::RefreshSlotGroups()
 	SlotListView->ClearSelection();
 	SlotListView->RequestListRefresh();
 	SlotListView->SetItemSelection(ToSelect, true);
+
+	RefreshPreview();
 }
 
 TSharedRef<ITableRow> SVMatMultiSlotTab::OnGenerateSlotRow(FSlotItem Item, const TSharedRef<STableViewBase>& OwnerTable)
@@ -903,6 +986,81 @@ void SVMatMultiSlotTab::OnGroupingChanged(EVMatSlotGrouping NewGrouping)
 {
 	Grouping = NewGrouping;
 	RefreshSlotGroups();
+}
+
+void SVMatMultiSlotTab::OnSlotSelectionChanged(FSlotItem Item, ESelectInfo::Type SelectInfo)
+{
+	RefreshPreview();
+}
+
+void SVMatMultiSlotTab::RefreshPreview()
+{
+	// 마지막에 누른 줄이 선택에서 빠졌으면 다른걸로. 다시 훑은 뒤에도 같은 mesh면 그대로 둬서 카메라 안 튀게
+	if (!PreviewItem.IsValid() || !ListView->IsItemSelected(PreviewItem))
+	{
+		const TArray<FItem> Selected = ListView->GetSelectedItems();
+		const UStaticMesh* ShownMesh = MeshPreview->GetMesh();
+		if (const FItem* Same = Selected.FindByPredicate([ShownMesh](const FItem& Item) { return ShownMesh && Item->Mesh.Get() == ShownMesh; }))
+		{
+			PreviewItem = *Same;
+		}
+		else
+		{
+			PreviewItem = Selected.IsEmpty() ? FItem() : Selected[0];
+		}
+	}
+
+	UStaticMesh* Mesh = PreviewItem.IsValid() ? PreviewItem->Mesh.Get() : nullptr;
+	MeshPreview->SetMesh(Mesh);
+
+	// slot 골랐으면 고른 slot만 원래 material로 두고 나머지는 어둡게. 어느 부분인지 바로 보여
+	TSet<int32> DimmedSlots;
+	if (Mesh && HasSlotSelection())
+	{
+		TSet<int32> SelectedSlots;
+		for (const FSlotItem& Group : SlotListView->GetSelectedItems())
+		{
+			for (const FVMatSlotTarget& Target : Group->Targets)
+			{
+				if (Target.Mesh.Get() == Mesh)
+				{
+					SelectedSlots.Add(Target.SlotIndex);
+				}
+			}
+		}
+
+		for (int32 SlotIndex = 0; SlotIndex < Mesh->GetStaticMaterials().Num(); ++SlotIndex)
+		{
+			if (!SelectedSlots.Contains(SlotIndex))
+			{
+				DimmedSlots.Add(SlotIndex);
+			}
+		}
+	}
+	MeshPreview->SetDimmedSlots(DimmedSlots);
+}
+
+bool SVMatMultiSlotTab::HasPreviewMesh() const
+{
+	return MeshPreview.IsValid() && MeshPreview->GetMesh() != nullptr;
+}
+
+FText SVMatMultiSlotTab::GetPreviewHintText() const
+{
+	TArray<FText> Lines;
+
+	const int32 NumSelected = ListView->GetNumItemsSelected();
+	if (NumSelected > 1)
+	{
+		Lines.Add(FText::Format(LOCTEXT("PreviewOneOfMany", "Last clicked of {0} selected meshes"), NumSelected));
+	}
+	if (HasSlotSelection())
+	{
+		Lines.Add(LOCTEXT("PreviewDimmed", "Selected slots in color, the rest dimmed"));
+	}
+	Lines.Add(LOCTEXT("PreviewControls", "Drag to orbit  ·  scroll to zoom  ·  F to frame"));
+
+	return FText::Join(FText::FromString(TEXT("\n")), Lines);
 }
 
 bool SVMatMultiSlotTab::HasSlotSelection() const
